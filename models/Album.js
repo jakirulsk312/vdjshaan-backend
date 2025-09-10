@@ -68,6 +68,15 @@ const AlbumSchema = new mongoose.Schema(
       type: String, // Cloudinary URL
       required: [true, "Album image is required"],
     },
+    driveFileId: {
+    type: String,
+    required: [true, "Google Drive file ID is required"]
+  },
+  driveFileId: {
+  type: String,
+  required: [true, "Google Drive file ID is required"]
+}
+
   },
   { timestamps: true }
 );

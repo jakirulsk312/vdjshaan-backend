@@ -1,10 +1,9 @@
 const express = require("express");
 const { downloadAlbum } = require("../controllers/order.controller");
-const userAuth = require("../middleware/userAuth");
 
 const router = express.Router();
 
-// GET /api/download/:albumId
-router.get("/:albumId", userAuth, downloadAlbum);
+// GET /api/download/:albumId?email=you@example.com
+router.get("/:albumId", downloadAlbum);
 
 module.exports = router;

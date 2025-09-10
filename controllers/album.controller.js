@@ -1,23 +1,34 @@
 const Album = require("../models/Album");
 
-// Create Album (Admin only)
 const createAlbum = async (req, res) => {
   try {
-    const album = await Album.create(req.body);
+    const { title, description, duration, price, image, driveFileId } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !duration || !price || !image || !driveFileId) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields including driveFileId are required",
+      });
+    }
+
+    const album = await Album.create({ title, description, duration, price, image, driveFileId });
+
     return res.status(201).json({
       success: true,
       message: "Album created successfully",
-      data: album
+      data: album,
     });
   } catch (error) {
     console.error("Error creating album:", error);
     return res.status(500).json({
       success: false,
       message: "Error creating album",
-      error: error.message
+      error: error.message,
     });
   }
 };
+
 
 // Get All Albums (Public)
 const getAllAlbums = async (req, res) => {

@@ -240,12 +240,254 @@
 
 
 
+//===============================================================================
 
 
 
 
 
 
+
+
+// const crypto = require("crypto");
+// const Order = require("../models/Order");
+// const Album = require("../models/Album");
+
+// // Generate hash for PayU
+// function generateHash({ key, txnid, amount, productinfo, firstname, email, salt }) {
+//   const string = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+//   return crypto.createHash("sha512").update(string).digest("hex");
+// }
+
+// // Create PayU Order
+// const createOrder = async (req, res) => {
+//   try {
+//     const { albumId } = req.body;
+//     const userId = req.user._id;
+
+//     const album = await Album.findById(albumId);
+//     if (!album) {
+//       return res.status(404).json({ success: false, message: "Album not found" });
+//     }
+
+//     // Check if user already purchased
+//     const existingOrder = await Order.findOne({ user: userId, album: albumId, paid: true });
+//     if (existingOrder) {
+//       return res.status(400).json({ success: false, message: "Already purchased this album" });
+//     }
+
+//     // Generate txnid
+//     const txnid = "txn_" + Date.now();
+
+//     // Hash string for PayU
+//     const hash = generateHash({
+//       key: process.env.PAYU_KEY,
+//       txnid,
+//       amount: album.price.toFixed(2),
+//       productinfo: album.title,
+//       firstname: req.user.name || "User",
+//       email: req.user.email || "test@example.com",
+//       salt: process.env.PAYU_SALT
+//     });
+
+//     // Save order
+//     const order = await Order.create({
+//       user: userId,
+//       album: albumId,
+//       payuTxnId: txnid,
+//       amount: album.price,
+//       paid: false
+//     });
+
+//     const payuData = {
+//       key: process.env.PAYU_KEY,
+//       txnid,
+//       amount: album.price.toFixed(2),
+//       productinfo: album.title,
+//       firstname: req.user.name || "User",
+//       email: req.user.email || "test@example.com",
+//       phone: "9999999999",
+//       surl: `${process.env.BASE_URL}/api/orders/payu/success`,
+//       furl: `${process.env.BASE_URL}/api/orders/payu/failure`,
+//       hash
+//     };
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Order created successfully",
+//       data: payuData
+//     });
+//   } catch (err) {
+//     console.error("Error creating order:", err);
+//     return res.status(500).json({ success: false, message: "Error creating order", error: err.message });
+//   }
+// };
+
+// // PayU success callback
+// const payuSuccess = async (req, res) => {
+//   try {
+//     const { txnid, status } = req.body;
+
+//     const order = await Order.findOne({ payuTxnId: txnid });
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     if (status === "success") {
+//       order.paid = true;
+//       await order.save();
+//       return res.json({ success: true, message: "Payment successful", data: order });
+//     } else {
+//       return res.json({ success: false, message: "Payment failed", data: order });
+//     }
+//   } catch (err) {
+//     console.error("PayU success error:", err);
+//     res.status(500).json({ success: false, message: "Error handling PayU callback", error: err.message });
+//   }
+// };
+
+// // PayU failure callback
+// const payuFailure = async (req, res) => {
+//   try {
+//     const { txnid } = req.body;
+
+//     const order = await Order.findOne({ payuTxnId: txnid });
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     return res.json({ success: false, message: "Payment failed", data: order });
+//   } catch (err) {
+//     console.error("PayU failure error:", err);
+//     res.status(500).json({ success: false, message: "Error handling PayU failure", error: err.message });
+//   }
+// };
+
+// // Get User Orders
+// const getMyOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ user: req.user._id, paid: true })
+//       .populate("album", "title description duration price image")
+//       .sort({ createdAt: -1 });
+
+//     return res.json({ success: true, count: orders.length, data: orders });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: "Error fetching orders", error: err.message });
+//   }
+// };
+
+// //get all orders
+
+// // Get all orders (Admin)
+// const getAllOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find()
+//       .populate("user", "name email")       // include user details
+//       .populate("album", "title price")     // include album details
+//       .sort({ createdAt: -1 });             // latest orders first
+
+//     return res.json({
+//       success: true,
+//       count: orders.length,
+//       data: orders
+//     });
+//   } catch (err) {
+//     console.error("Error fetching all orders:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Error fetching all orders",
+//       error: err.message
+//     });
+//   }
+// };
+
+
+
+// // ✅ Test Purchase (skip PayU)
+// const testPurchase = async (req, res) => {
+//   try {
+//     const { albumId } = req.body;
+//     const userId = req.user._id;
+
+//     const album = await Album.findById(albumId);
+//     if (!album) {
+//       return res.status(404).json({ success: false, message: "Album not found" });
+//     }
+
+//     // Check if already purchased
+//     const existingOrder = await Order.findOne({ user: userId, album: albumId, paid: true });
+//     if (existingOrder) {
+//       return res.status(400).json({ success: false, message: "Already purchased this album" });
+//     }
+
+//     // ✅ Directly mark as paid (skip PayU)
+//     const order = await Order.create({
+//       user: userId,
+//       album: albumId,
+//       payuTxnId: "test_" + Date.now(),
+//       amount: album.price,
+//       paid: true, // directly mark as paid
+//     });
+
+//     return res.json({
+//       success: true,
+//       message: "Test purchase successful",
+//       album: {
+//         _id: album._id,
+//         title: album.title,
+//         description: album.description,
+//         coverUrl: album.image,
+//         downloadUrl: `https://drive.google.com/uc?id=${album.driveFileId}&export=download`,
+//       },
+//     });
+//   } catch (err) {
+//     console.error("Test purchase error:", err);
+//     return res.status(500).json({ success: false, message: "Error in test purchase", error: err.message });
+//   }
+// };
+
+
+
+
+// // Download album
+// const downloadAlbum = async (req, res) => {
+//   try {
+//     const order = await Order.findOne({ user: req.user._id, album: req.params.albumId, paid: true })
+//       .populate("album");
+
+//     if (!order) {
+//       return res.status(403).json({ success: false, message: "You have not purchased this album" });
+//     }
+
+//     return res.json({
+//       success: true,
+//       message: "Download authorized",
+//       data: {
+//         albumTitle: order.album.title,
+//         driveFileId: order.album.driveFileId,
+//         downloadUrl: `https://drive.google.com/file/d/${order.album.driveFileId}/view`
+//       }
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: "Error processing download", error: err.message });
+//   }
+// };
+
+
+
+// module.exports = {
+//   createOrder,
+//   payuSuccess,
+//   payuFailure,
+//   getMyOrders,
+//   getAllOrders,
+//   downloadAlbum,
+//   testPurchase
+// };
+
+
+
+//=================================================================================
 
 
 
@@ -253,27 +495,20 @@ const crypto = require("crypto");
 const Order = require("../models/Order");
 const Album = require("../models/Album");
 
-// Generate hash for PayU
+// Generate PayU hash
 function generateHash({ key, txnid, amount, productinfo, firstname, email, salt }) {
-  const string = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
-  return crypto.createHash("sha512").update(string).digest("hex");
+  const str = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+  return crypto.createHash("sha512").update(str).digest("hex");
 }
 
 // Create PayU Order
 const createOrder = async (req, res) => {
   try {
-    const { albumId } = req.body;
-    const userId = req.user._id;
+    const { albumId, email } = req.body;
 
     const album = await Album.findById(albumId);
     if (!album) {
       return res.status(404).json({ success: false, message: "Album not found" });
-    }
-
-    // Check if user already purchased
-    const existingOrder = await Order.findOne({ user: userId, album: albumId, paid: true });
-    if (existingOrder) {
-      return res.status(400).json({ success: false, message: "Already purchased this album" });
     }
 
     // Generate txnid
@@ -285,18 +520,18 @@ const createOrder = async (req, res) => {
       txnid,
       amount: album.price.toFixed(2),
       productinfo: album.title,
-      firstname: req.user.name || "User",
-      email: req.user.email || "test@example.com",
-      salt: process.env.PAYU_SALT
+      firstname: email.split("@")[0], // take first part of email
+      email,
+      salt: process.env.PAYU_SALT,
     });
 
-    // Save order
+    // Save order (email-based, no userAuth)
     const order = await Order.create({
-      user: userId,
+      email,
       album: albumId,
       payuTxnId: txnid,
       amount: album.price,
-      paid: false
+      paid: false,
     });
 
     const payuData = {
@@ -304,41 +539,47 @@ const createOrder = async (req, res) => {
       txnid,
       amount: album.price.toFixed(2),
       productinfo: album.title,
-      firstname: req.user.name || "User",
-      email: req.user.email || "test@example.com",
+      firstname: email.split("@")[0],
+      email,
       phone: "9999999999",
       surl: `${process.env.BASE_URL}/api/orders/payu/success`,
       furl: `${process.env.BASE_URL}/api/orders/payu/failure`,
-      hash
+      hash,
     };
 
     return res.status(201).json({
       success: true,
       message: "Order created successfully",
-      data: payuData
+      data: payuData,
     });
   } catch (err) {
     console.error("Error creating order:", err);
-    return res.status(500).json({ success: false, message: "Error creating order", error: err.message });
+    return res
+      .status(500)
+      .json({ success: false, message: "Error creating order", error: err.message });
   }
 };
+
 
 // PayU success callback
 const payuSuccess = async (req, res) => {
   try {
     const { txnid, status } = req.body;
 
-    const order = await Order.findOne({ payuTxnId: txnid });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    const order = await Order.findOne({ payuTxnId: txnid }).populate("album");
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     if (status === "success") {
       order.paid = true;
       await order.save();
-      return res.json({ success: true, message: "Payment successful", data: order });
+
+      return res.json({
+        success: true,
+        message: "Payment successful",
+        downloadUrl: `https://drive.google.com/uc?id=${order.album.driveFileId}&export=download`,
+      });
     } else {
-      return res.json({ success: false, message: "Payment failed", data: order });
+      return res.json({ success: false, message: "Payment failed" });
     }
   } catch (err) {
     console.error("PayU success error:", err);
@@ -350,137 +591,37 @@ const payuSuccess = async (req, res) => {
 const payuFailure = async (req, res) => {
   try {
     const { txnid } = req.body;
-
     const order = await Order.findOne({ payuTxnId: txnid });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
-    return res.json({ success: false, message: "Payment failed", data: order });
+    return res.json({ success: false, message: "Payment failed" });
   } catch (err) {
     console.error("PayU failure error:", err);
     res.status(500).json({ success: false, message: "Error handling PayU failure", error: err.message });
   }
 };
-
-// Get User Orders
-const getMyOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ user: req.user._id, paid: true })
-      .populate("album", "title description duration price image")
-      .sort({ createdAt: -1 });
-
-    return res.json({ success: true, count: orders.length, data: orders });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Error fetching orders", error: err.message });
-  }
-};
-
-//get all orders
-
-// Get all orders (Admin)
-const getAllOrders = async (req, res) => {
-  try {
-    const orders = await Order.find()
-      .populate("user", "name email")       // include user details
-      .populate("album", "title price")     // include album details
-      .sort({ createdAt: -1 });             // latest orders first
-
-    return res.json({
-      success: true,
-      count: orders.length,
-      data: orders
-    });
-  } catch (err) {
-    console.error("Error fetching all orders:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching all orders",
-      error: err.message
-    });
-  }
-};
-
-
-
-// ✅ Test Purchase (skip PayU)
-const testPurchase = async (req, res) => {
-  try {
-    const { albumId } = req.body;
-    const userId = req.user._id;
-
-    const album = await Album.findById(albumId);
-    if (!album) {
-      return res.status(404).json({ success: false, message: "Album not found" });
-    }
-
-    // Check if already purchased
-    const existingOrder = await Order.findOne({ user: userId, album: albumId, paid: true });
-    if (existingOrder) {
-      return res.status(400).json({ success: false, message: "Already purchased this album" });
-    }
-
-    // ✅ Directly mark as paid (skip PayU)
-    const order = await Order.create({
-      user: userId,
-      album: albumId,
-      payuTxnId: "test_" + Date.now(),
-      amount: album.price,
-      paid: true, // directly mark as paid
-    });
-
-    return res.json({
-      success: true,
-      message: "Test purchase successful",
-      album: {
-        _id: album._id,
-        title: album.title,
-        description: album.description,
-        coverUrl: album.image,
-        downloadUrl: `https://drive.google.com/uc?id=${album.driveFileId}&export=download`,
-      },
-    });
-  } catch (err) {
-    console.error("Test purchase error:", err);
-    return res.status(500).json({ success: false, message: "Error in test purchase", error: err.message });
-  }
-};
-
-
-
-
-// Download album
 const downloadAlbum = async (req, res) => {
   try {
-    const order = await Order.findOne({ user: req.user._id, album: req.params.albumId, paid: true })
-      .populate("album");
+    const { albumId } = req.params;
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const order = await Order.findOne({ album: albumId, email, paid: true }).populate("album");
 
     if (!order) {
-      return res.status(403).json({ success: false, message: "You have not purchased this album" });
+      return res.status(403).json({ success: false, message: "No paid order found for this album with this email" });
     }
 
     return res.json({
       success: true,
-      message: "Download authorized",
-      data: {
-        albumTitle: order.album.title,
-        driveFileId: order.album.driveFileId,
-        downloadUrl: `https://drive.google.com/file/d/${order.album.driveFileId}/view`
-      }
+      downloadUrl: `https://drive.google.com/uc?id=${order.album.driveFileId}&export=download`,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: "Error processing download", error: err.message });
   }
 };
 
-
-
-module.exports = {
-  createOrder,
-  payuSuccess,
-  payuFailure,
-  getMyOrders,
-  getAllOrders,
-  downloadAlbum,
-  testPurchase
-};
+module.exports = { createOrder, payuSuccess, payuFailure, downloadAlbum };
