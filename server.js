@@ -24,7 +24,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "https://vdjshaan.com",
-  "https://www.vdjshaan.com"
+  "https://www.vdjshaan.com",
+  "https://dj-shaan.vercel.app/"
 ];
 
 app.use(cors({
